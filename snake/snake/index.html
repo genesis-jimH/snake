@@ -1,0 +1,327 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>Snake World</title>
+</head>
+<style>
+	* {
+		padding: 0;
+		margin: 0
+	}
+</style>
+<script src="pixi/pixi.min.js"></script>
+<script src="snake/snake.js"></script>
+<script src="snake/gridSystem.js"></script>
+<script src="https://www.kkkk1000.com/js/dust.js"></script>
+<script src="https://www.kkkk1000.com/js/spriteUtilities.js"></script>
+
+<body>
+	<script>
+		//Aliases
+		let Application = PIXI.Application,
+			Container = PIXI.Container,
+			loader = PIXI.loader,
+			resources = PIXI.loader.resources,
+			Graphics = PIXI.Graphics,
+			TextureCache = PIXI.utils.TextureCache,
+			Sprite = PIXI.Sprite,
+			Text = PIXI.Text,
+			TextStyle = PIXI.TextStyle,
+			Point = PIXI.Point;
+
+		//Create a Pixi Application
+		let app = new Application({
+			width: 256,         // default: 800
+			height: 256,        // default: 600
+			antialias: true,    // default: false
+			transparent: false, // default: false
+			resolution: 1       // default: 1
+		}
+		);
+		app.renderer.view.style.position = "absolute";
+		app.renderer.view.style.display = "block";
+		app.renderer.autoResize = true;
+		app.renderer.resize(window.innerWidth, window.innerHeight);
+		app.renderer.backgroundColor = 0x061639;
+		document.body.appendChild(app.view);
+
+		class Supply {
+			graphics;
+			constructor(grid) {
+				this.graphics = new PIXI.Graphics();
+				this.graphics.beginFill(0xFF0000);
+				this.graphics.lineStyle(1, 0xFF3300, 1);
+				this.graphics.drawRect(gridSystem.getGrid(grid).position.x,
+					gridSystem.getGrid(grid).position.y, 30, 30);
+				this.graphics.endFill();
+				supplyLayer.addChild(this.graphics);
+			}
+
+			destroy() {
+				supplyLayer.removeChild(this.graphics);
+			}
+		}
+
+		let style = new TextStyle({
+			fontFamily: "Arial",
+			fontSize: 36,
+			fill: "white",
+			stroke: '#ff3300',
+			strokeThickness: 4,
+			dropShadow: true,
+			dropShadowColor: "#000000",
+			dropShadowBlur: 4,
+			dropShadowAngle: Math.PI / 6,
+			dropShadowDistance: 6,
+		});
+		let GAME_START = "Game Start",
+			GAME_PAUSE = "Pause",
+			GAME_INTRO = "press SPACE to play",
+			GAME_OVER = "Game Over";
+
+		let isStart = false;
+		let score = 0;
+		let scoreText;
+		let gameInfoText;
+
+		let snakeLayer;
+		let supplyLayer;
+		let uiLayer;
+		let gridSystem;
+		let state;
+		let snake;
+		let direction = new Point(1, 0);
+		let defaultSpeed = 10;
+		let supplySpace = 1;
+		let mapW = parseInt(app.renderer.view.width / 30);
+		let mapH = parseInt(app.renderer.view.height / 30);
+		let snakeTime = 0;
+		let supplyTime = 0;
+		let bk = new PIXI.Graphics();
+
+		let su = new SpriteUtilities(PIXI);
+		let d = new Dust(PIXI);
+
+		let imgURL = "https://www.kkkk1000.com/images/learnPixiJS-ParticleEffects/star.png";
+		let particleStream = d.emitter(
+			100,
+			() => d.create(
+				128, 128,
+				() => su.sprite(imgURL),
+				app.stage,
+				5,
+				0.1,
+				false,
+				0, 6.28,
+				10, 30,
+				1, 3
+			)
+		);
+
+
+		PIXI.loader.add(imgURL).load(setup);
+		this.setup();
+
+		function setup() {
+
+
+			//Capture the keyboard arrow keys
+			let left = keyboard(37),
+				up = keyboard(38),
+				right = keyboard(39),
+				down = keyboard(40);
+			space = keyboard(32);
+
+			//Left arrow key `press` method
+			left.press = () => {
+				snake.setDirection(new Point(-1, 0));
+			};
+
+			up.press = () => {
+				snake.setDirection(new Point(0, -1));
+			};
+
+			right.press = () => {
+				snake.setDirection(new Point(1, 0));
+			};
+
+			down.press = () => {
+				snake.setDirection(new Point(0, 1));
+			};
+
+			//Set the game state
+			state = init;
+
+			//Start the game loop
+			app.ticker.add(this.gameLoop.bind(this));
+		}
+
+		function gameLoop(delta) {
+			state(delta);
+		}
+
+		function init(delta) {
+			console.error('init');
+			isStart = false;
+			snakeLayer = app.stage.addChild(new Container());
+			snakeLayer.name = 'snake';
+
+			supplyLayer = app.stage.addChild(new Container());
+			supplyLayer.name = 'supply';
+
+			uiLayer = app.stage.addChild(new Container());
+
+			// particleStream.play();
+
+			bk.alpha = 0.4;
+			bk.beginFill(0x000000);
+			bk.drawRect(0, 0, app.renderer.view.width, app.renderer.view.height);
+			bk.endFill();
+			bk.position = new Point(0, 0);
+			uiLayer.addChild(bk);
+			bk.visible = false;
+
+			uiLayer.name = 'ui';
+			gameInfoText = new Text(GAME_INTRO, style);
+			gameInfoText.position = new Point((app.renderer.view.width - gameInfoText.width) / 2, app.renderer.view.height / 2);
+			uiLayer.addChild(gameInfoText);
+			state = gameIntro;
+		}
+
+
+		let flag = true;
+		function lose(delta) {
+			if (flag) {
+				bk.visible = true;
+				scoreText.position = new Point((app.renderer.view.width - scoreText.width) / 2,
+					((app.renderer.view.height - scoreText.height) / 2) - gameInfoText.height * 1.2);
+				gameInfoText.text = " press SPACE to restart ", style;
+				gameInfoText.position = new Point((app.renderer.view.width - gameInfoText.width) / 2,
+					(app.renderer.view.height - gameInfoText.height) / 2);
+				flag = false;
+				isStart = false;
+
+			}
+			if (space.isDown) {
+				snakeLayer.destroy();
+				supplyLayer.destroy();
+				uiLayer.destroy();
+				flag = true;
+				state = init;
+			}
+		}
+
+		function gameIntro() {
+			gameInfoText.position = new Point((app.renderer.view.width - gameInfoText.width) / 2, app.renderer.view.height / 2);
+			gameInfoText.text = GAME_INTRO, style;
+			if (space.isDown && !isStart) {
+				gameInfoText.text = "";
+				isStart = true;
+				score = 0;
+
+				gridSystem = new GridSystem(new Point(mapW, mapH));
+				snake = new Snake(new Point(0, 0), gridSystem, 20, defaultSpeed);
+				snake.setDirection(new Point(1, 0))
+
+				scoreText = new Text("Score: " + score.toString(), style);
+				uiLayer.addChild(scoreText);
+
+				scoreText.position = new Point(10, 10);
+				state = play;
+
+			}
+
+		}
+
+		function play(delta) {
+			snakeTime += 1 / 60;
+			supplyTime += 1 / 60;
+			if (snakeTime >= 1 / snake.speed) {
+				let dead = checkDead();
+				if (dead) {
+					state = lose;
+
+				}
+				snake.move();
+				snakeTime = 0;
+			}
+			if (supplyTime >= supplySpace) {
+				let emptyGrids = new Array(0);
+				for (let i = 0; i < gridSystem.map.length; i++) {
+					for (let j = 0; j < gridSystem.map[i].length; j++) {
+						let grid = gridSystem.map[i][j];
+						if (grid.supply == null && !grid.block)
+							emptyGrids.push(grid);
+					}
+				}
+
+				let random = Math.floor(Math.random() * emptyGrids.length);
+				let randonGrid = gridSystem.getGrid(new Point(emptyGrids[random].position.x / 30, emptyGrids[random].position.y / 30))
+				let supply = new Supply(new Point(emptyGrids[random].position.x / 30, emptyGrids[random].position.y / 30));
+				randonGrid.supply = supply;
+				supplyTime = 0;
+			}
+		}
+
+		function checkDead() {
+			let x = snake.currentGrid.x + snake.direction.x;
+			let y = snake.currentGrid.y + snake.direction.y;
+
+			if (x >= gridSystem.map.length)
+				x = 0;
+			if (x < 0)
+				x = gridSystem.map.length - 1;
+			if (y >= gridSystem.map[0].length)
+				y = 0;
+			if (y < 0)
+				y = gridSystem.map[0].length - 1;
+
+			let snakeFaceGrid = gridSystem.getGrid(new Point(x, y));
+			if (snakeFaceGrid.block == true)
+				return true;
+		}
+
+
+
+		function keyboard(keyCode) {
+			let key = {};
+			key.code = keyCode;
+			key.isDown = false;
+			key.isUp = true;
+			key.press = undefined;
+			key.release = undefined;
+			//The `downHandler`
+			key.downHandler = event => {
+				if (event.keyCode === key.code) {
+					if (key.isUp && key.press) key.press();
+					key.isDown = true;
+					key.isUp = false;
+				}
+				event.preventDefault();
+			};
+
+			//The `upHandler`
+			key.upHandler = event => {
+				if (event.keyCode === key.code) {
+					if (key.isDown && key.release) key.release();
+					key.isDown = false;
+					key.isUp = true;
+				}
+				event.preventDefault();
+			};
+
+			//Attach event listeners
+			window.addEventListener(
+				"keydown", key.downHandler.bind(key), false
+			);
+			window.addEventListener(
+				"keyup", key.upHandler.bind(key), false
+			);
+			return key;
+		}
+	</script>
+</body>
+
+</html>
