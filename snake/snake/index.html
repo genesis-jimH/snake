@@ -14,7 +14,8 @@
 <script src="pixi/pixi.min.js"></script>
 <script src="snake/snake.js"></script>
 <script src="snake/gridSystem.js"></script>
-
+<script src="https://www.kkkk1000.com/js/dust.js"></script>
+<script src="https://www.kkkk1000.com/js/spriteUtilities.js"></script>
 
 <body>
 	<script>
@@ -28,7 +29,8 @@
 			Sprite = PIXI.Sprite,
 			Text = PIXI.Text,
 			TextStyle = PIXI.TextStyle,
-			Point = PIXI.Point;
+			Point = PIXI.Point,
+			Emitter = PIXI.emitter;
 
 		//Create a Pixi Application
 		let app = new Application({
@@ -88,6 +90,7 @@
 		let snakeLayer;
 		let supplyLayer;
 		let uiLayer;
+
 		let gridSystem;
 		let state;
 		let snake;
@@ -100,6 +103,26 @@
 		let supplyTime = 0;
 		let bk = new PIXI.Graphics();
 
+		let su = new SpriteUtilities(PIXI);
+		let d = new Dust(PIXI);
+
+		let imgURL = "https://www.kkkk1000.com/images/learnPixiJS-ParticleEffects/star.png";
+		let particleStream = d.emitter(
+			100,
+			() => d.create(
+				128, 128,
+				() => su.sprite(imgURL),
+				app.stage,
+				30,
+				0.1,
+				false,
+				3.14, 6.28,
+				10, 40,
+				1, 5
+			)
+		);
+
+		// PIXI.loader.add(imgURL).load(setup);
 		this.setup();
 
 		function setup() {
@@ -150,7 +173,6 @@
 
 			uiLayer = app.stage.addChild(new Container());
 
-
 			bk.alpha = 0.4;
 			bk.beginFill(0x000000);
 			bk.drawRect(0, 0, app.renderer.view.width, app.renderer.view.height);
@@ -196,6 +218,8 @@
 				gameInfoText.text = "";
 				isStart = true;
 				score = 0;
+
+				particleStream.stop();
 
 				gridSystem = new GridSystem(new Point(mapW, mapH));
 				snake = new Snake(new Point(0, 0), gridSystem, 20, defaultSpeed);
