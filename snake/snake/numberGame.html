@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title>Pixi Test</title>
+</head>
+
+<body>
+	<div id="px-render"></div>
+
+	<script src="pixi/pixi.min.js"></script>
+
+	<script>
+
+		let Application = PIXI.Application,
+			Container = PIXI.Container,
+			loader = PIXI.loader,
+			resources = PIXI.loader.resources,
+			Graphics = PIXI.Graphics,
+			TextureCache = PIXI.utils.TextureCache,
+			Sprite = PIXI.Sprite,
+			Text = PIXI.Text,
+			TextStyle = PIXI.TextStyle,
+			Point = PIXI.Point;
+
+		let option = {
+			width: 600,
+			height: 600,
+			transparent: true,
+			antialias: true,
+			resolution: 1
+		}
+
+		let style = new TextStyle({
+			fontFamily: "Arial",
+			fontSize: 18,
+			fill: "white",
+			stroke: '#ff3300',
+			strokeThickness: 4,
+		});
+
+		class Grid {
+			position;
+			block;
+			supply;
+			constructor(position) {
+				this.position = position;
+			}
+		}
+
+		class gridBackground {
+			map;
+			constructor(size) {
+				this.map = new Array(size.x);
+				for (let i = 0; i < size.x; i++) {
+					this.map[i] = new Array(size.y);
+				}
+				for (let i = 0; i < this.map.length; i++) {
+					for (let j = 0; j < this.map[i].length; j++) {
+						this.map[j][i] = new Grid(new Point(j * defaultUnit, i * defaultUnit));
+
+						cubeContainer[i] = app.stage.addChild(new Container());
+						cubeContainer[i].position = new Point(j * defaultUnit, i * defaultUnit);
+						cubeContainer[i].name = "back " + (i + 1);
+
+						cube = new PIXI.Graphics();
+						cube.beginFill(0xfcba03);
+						cube.lineStyle(1, 0xFF3300, 1);
+						cube.drawRect(0, 0, defaultUnit, defaultUnit);
+						cube.endFill();
+
+						cubeContainer[i].addChild(cube);
+
+					}
+				}
+			}
+
+			getGrid(point) {
+				if (point.x <= -1 || point.x >= this.map.length)
+					return undefined;
+				if (point.y <= -1 || point.y >= this.map[point.x].length)
+					return undefined;
+				return this.map[point.x][point.y];
+			}
+		}
+
+		let app = new Application(option);
+		let defaultUnit = 30;
+		document.body.appendChild(app.view);
+
+		let gridSystem;
+		let cubeContainer = new Array();
+		let cubeNumber;
+		let cube;
+
+		this.setup();
+
+		function setup() {
+
+			gridSystem = new gridBackground(new Point(4, 4));
+			// this.graphics = new PIXI.Graphics();
+			// this.graphics.beginFill(0xFF0000);
+			// this.graphics.lineStyle(1, 0xFF3300, 1);
+			// this.graphics.drawRect(gridBackground.getGrid(grid).position.x,
+			// 	gridBackground.getGrid(grid).position.y, 30, 30);
+			// this.graphics.endFill();
+			// supplyLayer.addChild(this.graphics);
+
+			for (i = 0; i <= 14; i++) {
+				cubeContainer[i] = app.stage.addChild(new Container());
+				cubeContainer[i].position = new Point(cubeContainer[i].position.x + (i * defaultUnit), 0);
+				cubeContainer[i].name = "Cube " + (i + 1);
+
+				cube = new PIXI.Graphics();
+				cube.beginFill(0x20B2AA);
+				cube.lineStyle(1, 0xFF3300, 1);
+				cube.drawRect(0, 0, defaultUnit, defaultUnit);
+				cube.endFill();
+				cube.alpha = 0.4;
+
+				cubeNumber = new Text(i + 1, style);
+				cubeNumber.position.x = (cube.width - cubeNumber.width) / 2;
+				cubeNumber.position.y = (cube.height - cubeNumber.height) / 2;
+				cubeContainer[i].addChild(cube);
+				cubeContainer[i].addChild(cubeNumber);
+
+			}
+
+		}
+
+		function onDown(eventData) {
+			cat.scale.x += 0.3;
+			cat.scale.y += 0.3;
+		}
+
+		function gameLoop() {
+
+		}
+	</script>
+</body>
+
+</html>
