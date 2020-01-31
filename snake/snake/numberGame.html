@@ -9,182 +9,243 @@
 <body>
 	<div id="px-render"></div>
 
-	<script src="pixi/pixi.min.js"></script>
+	<div>
+		<button onmouseover="mOver(this,3)" onmouseout="mOut(this,'易')"
+			style="background-color:rgb(206, 253, 97);width:5px;height:5px;padding:20px;" ,
+			onclick=setLevel(3)>易</button>
+		<button onmouseover="mOver(this,4)" onmouseout="mOut(this,'中')"
+			style="background-color:rgb(81, 171, 255);width:5px;height:5px;padding:20px;" ,
+			onclick=setLevel(4)>中</button>
+		<button onmouseover="mOver(this,5)" onmouseout="mOut(this,'難')"
+			style="background-color:rgb(253, 115, 35);width:5px;height:5px;padding:20px;" ,
+			onclick=setLevel(5)>難</button>
 
-	<script>
+		<script src="pixi/pixi.min.js"></script>
 
-		let Application = PIXI.Application,
-			Container = PIXI.Container,
-			loader = PIXI.loader,
-			resources = PIXI.loader.resources,
-			Graphics = PIXI.Graphics,
-			TextureCache = PIXI.utils.TextureCache,
-			Sprite = PIXI.Sprite,
-			Text = PIXI.Text,
-			TextStyle = PIXI.TextStyle,
-			Point = PIXI.Point;
+		<script>
 
-		let option = {
-			width: 600,
-			height: 600,
-			transparent: true,
-			antialias: true,
-			resolution: 1
-		}
+			let Application = PIXI.Application,
+				Container = PIXI.Container,
+				loader = PIXI.loader,
+				resources = PIXI.loader.resources,
+				Graphics = PIXI.Graphics,
+				TextureCache = PIXI.utils.TextureCache,
+				Sprite = PIXI.Sprite,
+				Text = PIXI.Text,
+				TextStyle = PIXI.TextStyle,
+				Point = PIXI.Point;
 
-		let style = new TextStyle({
-			fontFamily: "Arial",
-			fontSize: 18,
-			fill: "white",
-			stroke: '#ff3300',
-			strokeThickness: 4,
-		});
-
-		class Grid {
-			position;
-			block;
-			supply;
-			constructor(position) {
-				this.position = position;
+			let option = {
+				width: 600,
+				height: 600,
+				transparent: true,
+				antialias: true,
+				resolution: 1
 			}
-		}
 
-		class gridBackground {
-			map;
-			correctPosition;
-			isCorrect;
-			constructor(size) {
-				this.map = new Array(size.x);
-				for (let i = 0; i < size.x; i++) {
-					this.map[i] = new Array(size.y);
-					for (let j = 0; j < size.y; j++) {
-						let textNumber = (i * size.x) + j;
+			let style = new TextStyle({
+				fontFamily: "Arial",
+				fontSize: 18,
+				fill: "white",
+				stroke: '#ff3300',
+				strokeThickness: 4,
+			});
 
-						this.map[i][j] = new Grid(new Point(j * defaultUnit, i * defaultUnit));
+			class Grid {
+				position;
+				block;
+				supply;
+				constructor(position) {
+					this.position = position;
+				}
+			}
 
-						cubeContainer[textNumber] = app.stage.addChild(new Container());
-						cubeContainer[textNumber].position = new Point(j * defaultUnit, i * defaultUnit);
-						cubeContainer[textNumber].correctPosition = new Point(j * defaultUnit, i * defaultUnit);
+			class gridBackground {
+				map;
+				correctPosition;
+				isCorrect;
+				constructor(size) {
+					this.map = new Array(size.x);
+					for (let i = 0; i < size.x; i++) {
+						this.map[i] = new Array(size.y);
+						for (let j = 0; j < size.y; j++) {
+							let textNumber = (i * size.x) + j;
 
-						cubeContainer[textNumber].name = textNumber;
+							this.map[i][j] = new Grid(new Point(j * defaultUnit, i * defaultUnit));
 
-						cube = new PIXI.Graphics();
-						if (textNumber == 0) {
-							cube.beginFill(0x46A3FF);
-						} else {
-							cube.beginFill(0xfcba03);
+							cubeContainer[textNumber] = app.stage.addChild(new Container());
+							cubeContainer[textNumber].position = new Point(j * defaultUnit, i * defaultUnit);
+							cubeContainer[textNumber].correctPosition = new Point(j * defaultUnit, i * defaultUnit);
+
+							cubeContainer[textNumber].name = textNumber;
+
+							cube = new PIXI.Graphics();
+							if (textNumber == 0) {
+								cube.beginFill(0x46A3FF);
+							} else {
+								cube.beginFill(0xfcba03);
+							}
+
+							cube.lineStyle(1, 0xFF3300, 1);
+							cube.drawRect(0, 0, defaultUnit, defaultUnit);
+							cube.endFill();
+
+							cubeContainer[textNumber].interactive = true;
+							cubeContainer[textNumber]
+								.on('mousedown', onDragMove)
+
+
+							cubeNumber = new Text(textNumber, style);
+							cubeNumber.position.x = (cube.width - cubeNumber.width) / 2;
+							cubeNumber.position.y = (cube.height - cubeNumber.height) / 2;
+
+							cubeContainer[textNumber].addChild(cube);
+							cubeContainer[textNumber].addChild(cubeNumber);
+
+							temporaryCubeArray.push(new Point(cubeContainer[textNumber].position.x, cubeContainer[textNumber].position.y));
+							correctCubeArray.push(new Point(cubeContainer[textNumber].position.x, cubeContainer[textNumber].position.y));
 						}
-
-						cube.lineStyle(1, 0xFF3300, 1);
-						cube.drawRect(0, 0, defaultUnit, defaultUnit);
-						cube.endFill();
-
-						cubeContainer[textNumber].interactive = true;
-						cubeContainer[textNumber]
-							.on('mousedown', onDragMove)
-
-
-						cubeNumber = new Text(textNumber, style);
-						cubeNumber.position.x = (cube.width - cubeNumber.width) / 2;
-						cubeNumber.position.y = (cube.height - cubeNumber.height) / 2;
-
-						cubeContainer[textNumber].addChild(cube);
-						cubeContainer[textNumber].addChild(cubeNumber);
-
-						temporaryCubeArray.push(new Point(cubeContainer[textNumber].position.x, cubeContainer[textNumber].position.y));
-						correctCubeArray.push(new Point(cubeContainer[textNumber].position.x, cubeContainer[textNumber].position.y));
 					}
+				}
+
+				getGrid(point) {
+					return cubeContainer['0'].position;
 				}
 			}
 
-			getGrid(point) {
-				return cubeContainer['0'].position;
+			let app = new Application(option);
+			let defaultUnit = 60;
+			document.body.appendChild(app.view);
+			let isSelect = false;
+
+			let defaultCube = new Array();
+
+			let temporaryCubeArray = new Array(0);
+			let correctCubeArray = new Array(0);
+			let gridSystem;
+			let gridLevel = this.level; //setup map size
+
+			let cubeContainer = new Array();
+			let cubeNumber;
+			let cube;
+
+			let correctMount;
+
+			let background = new PIXI.Graphics();
+			let moveCount;
+			let moveCountText;
+			let gameInfoText;
+
+			let state
+
+			this.introGame();
+
+			function gameLoop(delta) {
+				state(delta);
 			}
-		}
 
-		let app = new Application(option);
-		let defaultUnit = 60;
-		document.body.appendChild(app.view);
+			let level;
+			function mOver(obj, num) {
+				obj.innerHTML = num + ("*") + num;
+			}
 
-		let defaultCube = new Array();
+			function mOut(obj, string) {
+				obj.innerHTML = string;
+			}
 
-		let temporaryCubeArray = new Array(0);
-		let correctCubeArray = new Array(0);
-		let gridSystem;
-		let gridLevel = 2;
+			function setLevel(num) {
+				this.level = num;
+				isSelect = true;
+			}
 
-		let cubeContainer = new Array();
-		let cubeNumber;
-		let cube;
+			function introGame() {
+				state = setup;
+				//Start the game loop
+				app.ticker.add(this.gameLoop.bind(this));
 
-		let correctMount;
-		let bk = new PIXI.Graphics();
+			}
 
-		let gameInfoText;
-		let state
+			function setup() {
+				if (isSelect == true) {
+					gridLevel = this.level;
+					gridSystem = new gridBackground(new Point(gridLevel, gridLevel));
+					randomArrange();
+					createUILayer();
 
-		this.setup();
+					state = play;
+				}
 
-		function gameLoop(delta) {
-			state(delta);
-		}
+			}
 
-		function setup() {
-			gridSystem = new gridBackground(new Point(gridLevel, gridLevel));
-			randomArrange();
-			uiLayer = app.stage.addChild(new Container());
-			bk.alpha = 0.4;
-			bk.beginFill(0x000000);
-			bk.drawRect(0, 0, app.renderer.view.width, app.renderer.view.height);
-			bk.endFill();
-			bk.position = new Point(0, 0);
-			uiLayer.addChild(bk);
-			bk.visible = false;
+			function play() {
+			}
 
-			app.ticker.add(this.gameLoop.bind(this));
-			state = play;
-		}
+			function onDragMove() {
+				let newPosition = gridSystem.getGrid('0');
+				if ((this.position.x - newPosition.x) * (this.position.x - newPosition.x) +
+					(this.position.y - newPosition.y) * (this.position.y - newPosition.y) == defaultUnit * defaultUnit) {
+					let temporaryPosition = new Point(this.position.x, this.position.y);
+					this.position = newPosition;
+					cubeContainer['0'].position = temporaryPosition;
 
-		function play() {
-		}
+					this.moveCount += 1;
+					this.correctMount = 0;
+					for (i = 0; i < cubeContainer.length; i++) {
+						if (cubeContainer[i].position.x == cubeContainer[i].correctPosition.x
+							&& cubeContainer[i].position.y == cubeContainer[i].correctPosition.y) {
+							cubeContainer[i].isCorrect = true;
+							this.correctMount++;
+						} else {
+							cubeContainer[i].isCorrect = false;
+							this.correctMount--;
+						}
+					}
 
-		function onDragMove() {
-			let newPosition = gridSystem.getGrid('0');
-			if ((this.position.x - newPosition.x) * (this.position.x - newPosition.x) +
-				(this.position.y - newPosition.y) * (this.position.y - newPosition.y) == defaultUnit * defaultUnit) {
-				let temporaryPosition = new Point(this.position.x, this.position.y);
-				this.position = newPosition;
-				cubeContainer['0'].position = temporaryPosition;
+					if (this.correctMount == (gridLevel * gridLevel)) {
+						win();
+					}
 
-				this.correctMount = 0;
+				}
+
+			}
+
+			function win() {
+				background.visible = true;
+				console.log("win");
+				gameInfoText = new Text("win", style);
+				gameInfoText.position = new Point((app.renderer.view.width - gameInfoText.width) / 2, app.renderer.view.height / 2);
+				uiLayer.addChild(gameInfoText);
+			}
+
+			function createUILayer() {
+
+				uiLayer = app.stage.addChild(new Container());
+				uiLayer.name = 'UI';
+
+				moveCountText = new Text(moveCount, style);
+				moveCountText.position = new Point(10, 10);
+				uiLayer.addChild(moveCountText);
+
+				background.alpha = 0.4;
+				background.beginFill(0x000000);
+				background.drawRect(0, 0, app.renderer.view.width, app.renderer.view.height);
+				background.endFill();
+				background.position = new Point(0, 0);
+				uiLayer.addChild(background);
+				background.visible = false;
+			}
+
+			function randomArrange() {
 				for (i = 0; i < cubeContainer.length; i++) {
-					if (cubeContainer[i].position.x == cubeContainer[i].correctPosition.x
-						&& cubeContainer[i].position.y == cubeContainer[i].correctPosition.y) {
-						cubeContainer[i].isCorrect = true;
-						this.correctMount++;
-					} else {
-						cubeContainer[i].isCorrect = false;
-						this.correctMount--;
-					}
+					let random = Math.floor(Math.random() * temporaryCubeArray.length);
+					cubeContainer[i].position = temporaryCubeArray[random];
+					temporaryCubeArray.splice(random, 1);
 				}
-
-				if (this.correctMount == (gridLevel * gridLevel)) {
-					bk.visible = true;
-					console.log("win");
-				}
-
 			}
+		</script>
+	</div>
 
-		}
 
-		function randomArrange() {
-			for (i = 0; i < cubeContainer.length; i++) {
-				let random = Math.floor(Math.random() * temporaryCubeArray.length);
-				cubeContainer[i].position = temporaryCubeArray[random];
-				temporaryCubeArray.splice(random, 1);
-			}
-		}
-	</script>
 </body>
 
 </html>
