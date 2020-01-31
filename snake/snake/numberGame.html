@@ -10,13 +10,13 @@
 	<div id="px-render"></div>
 
 	<div>
-		<button onmouseover="mOver(this,3)" onmouseout="mOut(this,'易')"
+		<button class="selectButton" onmouseover="mOver(this,3)" onmouseout="mOut(this,'易')"
 			style="background-color:rgb(206, 253, 97);width:5px;height:5px;padding:20px;" ,
 			onclick=setLevel(3)>易</button>
-		<button onmouseover="mOver(this,4)" onmouseout="mOut(this,'中')"
+		<button class="selectButton" onmouseover="mOver(this,4)" onmouseout="mOut(this,'中')"
 			style="background-color:rgb(81, 171, 255);width:5px;height:5px;padding:20px;" ,
 			onclick=setLevel(4)>中</button>
-		<button onmouseover="mOver(this,5)" onmouseout="mOut(this,'難')"
+		<button class="selectButton" onmouseover="mOver(this,5)" onmouseout="mOut(this,'難')"
 			style="background-color:rgb(253, 115, 35);width:5px;height:5px;padding:20px;" ,
 			onclick=setLevel(5)>難</button>
 
@@ -114,7 +114,9 @@
 			}
 
 			let app = new Application(option);
-			let defaultUnit = 60;
+			app.renderer.resize(window.innerWidth, window.innerHeight);
+			let defaultUnit = 60; // defaultSize = 60 
+			let reservedEdge = 10;
 			document.body.appendChild(app.view);
 			let isSelect = false;
 
@@ -156,9 +158,16 @@
 			function setLevel(num) {
 				this.level = num;
 				isSelect = true;
+
+				t = x.length;
+				for (i = 0; i < t; i++) {
+					x[0].parentNode.removeChild(x[0]);
+				}
+
 			}
 
 			function introGame() {
+				x = document.getElementsByClassName('selectButton');
 				state = setup;
 				//Start the game loop
 				app.ticker.add(this.gameLoop.bind(this));
@@ -167,7 +176,15 @@
 
 			function setup() {
 				if (isSelect == true) {
-					gridLevel = this.level;
+					gridLevel = 2;
+					if (app.renderer.view.width > app.renderer.view.height) {
+						defaultUnit = (app.renderer.view.height / gridLevel) - reservedEdge;
+					} else {
+						defaultUnit = (app.renderer.view.width / gridLevel) - reservedEdge;
+					}
+
+					style.fontSize = defaultUnit / 2;
+
 					gridSystem = new gridBackground(new Point(gridLevel, gridLevel));
 					randomArrange();
 					createUILayer();
@@ -213,8 +230,14 @@
 				background.visible = true;
 				console.log("win");
 				gameInfoText = new Text("win", style);
-				gameInfoText.position = new Point((app.renderer.view.width - gameInfoText.width) / 2, app.renderer.view.height / 2);
+				gameInfoText.position = new Point((background.width - gameInfoText.width) / 2, (background.height - gameInfoText.height) / 2);
 				uiLayer.addChild(gameInfoText);
+
+				let restartBtn = document.createElement("BUTTON");
+				restartBtn.innerHTML = "RESTART";
+				document.body.append(restartBtn);
+				restartBtn.position = new Point((window.innerWidth - gameInfoText.width) / 2, window.innerHeight / 2);
+				restartBtn.onclick = function () { window.location.reload(" https://genesis-jimh.github.io/snake/snake/snake/numberGame.html ") };
 			}
 
 			function createUILayer() {
@@ -228,7 +251,7 @@
 
 				background.alpha = 0.4;
 				background.beginFill(0x000000);
-				background.drawRect(0, 0, app.renderer.view.width, app.renderer.view.height);
+				background.drawRect(0, 0, defaultUnit * gridLevel, defaultUnit * gridLevel);
 				background.endFill();
 				background.position = new Point(0, 0);
 				uiLayer.addChild(background);
